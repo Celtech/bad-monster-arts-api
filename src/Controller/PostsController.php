@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Categories;
 use App\Entity\Posts;
 use App\Repository\PostsRepository;
 use App\Repository\UserRepository;
@@ -123,7 +124,7 @@ class PostsController extends AbstractController
     }
 
     private function toJson(Posts $post, $long = true) {
-        $allowedTags = '<br><h2><h3><h4><h5><h6><p><b><i><strong><a><em>';
+        $allowedTags = '<br><h3><h4><h5><h6><p><b><i><strong><a><em>';
         $short = $this->truncate(strip_tags($post->getBody(), $allowedTags), 750);
 
         return [
@@ -132,8 +133,8 @@ class PostsController extends AbstractController
             'title_image' => $post->getTitleImage() ? $post->getTitleImage() : '',
             'body' => $long ? $post->getBody() : $short,
             'author' => sprintf('%s %s', $post->getAuthor()->getFirstName(), $post->getAuthor()->getLastName()),
-            'categories' => $post->getCategories()->toArray(),
-            'created_at' => $post->getCreatedAt(),
+            'categories' => $this->categoriesToString($post->getCategories()),
+            'created_at' => date_format($post->getCreatedAt(), 'F d, Y'),
         ];
     }
 
@@ -185,5 +186,24 @@ class PostsController extends AbstractController
         $output = str_replace('</!-->','',$output);
 
         return $output;
+    }
+
+    private function categoriesToString($categories) {
+        $string = '';
+        $length = count($categories);
+
+        if($length === 0) {
+            return 'Uncategorized';
+        }
+
+        for($i = 0; $i < $length; $i++) {
+            $string .= $categories[$i]->getName();
+
+            if($i !== ($length - 1)) {
+                $string .= ', ';
+            }
+        }
+
+        return $string;
     }
 }

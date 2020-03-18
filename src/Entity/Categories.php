@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -37,9 +39,14 @@ class Categories
     private $updated_at;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Posts", inversedBy="categories")
+     * @ORM\ManyToMany(targetEntity="App\Entity\Posts", mappedBy="categories")
      */
     private $posts;
+
+    public function __construct()
+    {
+        $this->posts = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -94,14 +101,30 @@ class Categories
         return $this;
     }
 
-    public function getPosts(): ?Posts
+    /**
+     * @return Collection|Posts[]
+     */
+    public function getPosts(): Collection
     {
         return $this->posts;
     }
 
-    public function setPosts(?Posts $posts): self
+    public function addPost(Posts $post): self
     {
-        $this->posts = $posts;
+        if (!$this->posts->contains($post)) {
+            $this->posts[] = $post;
+            $post->addCategory($this);
+        }
+
+        return $this;
+    }
+
+    public function removePost(Posts $post): self
+    {
+        if ($this->posts->contains($post)) {
+            $this->posts->removeElement($post);
+            $post->removeCategory($this);
+        }
 
         return $this;
     }
