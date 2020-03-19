@@ -17,7 +17,7 @@ class PostsController extends AbstractController
 
     /**
      * PostsController constructor.
-     * @param $em
+     * @param EntityManagerInterface $entityManager
      */
     public function __construct(EntityManagerInterface $entityManager)
     {
@@ -64,7 +64,7 @@ class PostsController extends AbstractController
     }
 
     /**
-     * @Route("/api/posts/", name="posts_make", methods={"POST"})
+     * @Route("/api/posts", name="posts_make", methods={"POST"})
      */
     public function makePost(Request $request, UserRepository $userRepository)
     {
