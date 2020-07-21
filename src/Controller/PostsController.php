@@ -153,7 +153,9 @@ class PostsController extends AbstractController
             $formattedComments[] = [
                 'id' => $comment->getId(),
                 'body' => $comment->getCommentBody(),
-                'comments' => $this->commentsToJson($comment->getComments())
+                'comments' => $this->commentsToJson($comment->getComments()),
+                'created_at' => $comment->getCreatedAt(),
+                'author' => sprintf('%s %s', $comment->getAuthor()->getFirstName(), $comment->getAuthor()->getLastName()),
             ];
         }
 
