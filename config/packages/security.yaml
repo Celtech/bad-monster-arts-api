@@ -29,7 +29,7 @@ security:
         api:
             pattern:   ^/api
             stateless: true
-            methods: [PUT, POST, DELETE]
+            methods: [DELETE]
             guard:
                 authenticators:
                     - lexik_jwt_authentication.jwt_token_authenticator
