@@ -8,8 +8,10 @@ use App\Entity\Posts;
 use App\Repository\CommentsRepository;
 use App\Repository\PostsRepository;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -28,39 +30,42 @@ class CommentsController extends AbstractController
 
 
     /**
-     * @Route("/api/posts", name="posts", methods={"GET"})
+     * @Route("/api/comments", name="comments", methods={"POST"})
+     * @param Request $request
+     * @param CommentsRepository $commentsRepository
      */
-    public function getComments(Request $request, CommentsRepository $commentsRepository)
+    public function postComment(Request $request, CommentsRepository $commentsRepository, PostsRepository $postsRepository)
     {
-        $page = $request->get('page') ?? 1;
+        $data = json_decode($request->getContent());
 
-        $posts = $commentsRepository->findAll();
-        $length = count($posts);
+        $parentComment = $commentsRepository->find($data->parent_id ?? 0);
+        $post = $postsRepository->find($data->post_id ?? 0);
 
-        $jsonPosts = [];
-        for ($i = 0; $i < $length; $i++) {
-            if (key_exists($i, $posts)) {
-                $jsonPosts[] = $this->toJson($posts[$i], false);
-            }
-        }
+        $comment = new Comments();
+        $comment->setAuthor(null);
+        $comment->setCommentBody($data->body);
+        $comment->setCreatedAt(new \DateTime());
+        $comment->setPost($post);
+        $comment->setParent($parentComment);
 
-        return $this->json([
-            'data' => $jsonPosts,
-            'length' => $length,
-            'pages' => ceil($length / 5),
-            'page' => $page,
-        ]);
+        $this->em->persist($comment);
+        $this->em->flush();
+
+        return new JsonResponse($this->commentsToJson($comment));
     }
 
 
-    private function toJson(Comments $comment, $long = true)
-    {
+    private function commentsToJson(Comments $comment) {
+
         return [
             'id' => $comment->getId(),
-            'author' => $comment->getAuthor()->getId(),
-            'comment_body' => $comment->getCommentBody(),
-            'comments' => $comment->getComments(),
-            'created_at' => date_format($comment->getCreatedAt(), 'F d, Y'),
+            'body' => $comment->getCommentBody(),
+            'post' => $comment->getPost()->getId(),
+            'created_at' => $comment->getCreatedAt(),
+            'author' => $comment->getAuthor() ? [
+                'id' => $comment->getAuthor()->getId(),
+                'name' => sprintf('%s %s', $comment->getAuthor()->getFirstName(), $comment->getAuthor()->getLastName()),
+            ] : null
         ];
     }
 }

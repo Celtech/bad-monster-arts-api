@@ -132,7 +132,6 @@ class PostsController extends AbstractController
     private function toJson(Posts $post, $long = true) {
         $allowedTags = '<br><h3><h4><h5><h6><p><b><i><strong><a><em>';
         $short = $this->truncate(strip_tags($post->getBody(), $allowedTags), 750);
-        $comments = $post->getComments();
 
         return [
             'id' => $post->getId(),
@@ -140,6 +139,7 @@ class PostsController extends AbstractController
             'title_image' => $post->getTitleImage() ? $post->getTitleImage() : '',
             'body' => $long ? $post->getBody() : $short,
             'comments' => $this->commentsToJson($post->getComments()),
+            'comment_count' => $this->countComments($post->getComments()),
             'author' => sprintf('%s %s', $post->getAuthor()->getFirstName(), $post->getAuthor()->getLastName()),
             'categories' => $this->categoriesToString($post->getCategories()),
             'created_at' => date_format($post->getCreatedAt(), 'F d, Y'),
@@ -148,11 +148,13 @@ class PostsController extends AbstractController
 
     private function commentsToJson(Collection $comments) {
         $formattedComments = [];
+
         /** @var Comments $comment */
         foreach ($comments as $comment) {
             $formattedComments[] = [
                 'id' => $comment->getId(),
                 'body' => $comment->getCommentBody(),
+                'post' => $comment->getPost()->getId(),
                 'comments' => $this->commentsToJson($comment->getComments()),
                 'created_at' => $comment->getCreatedAt(),
                 'author' => $comment->getAuthor() ? [
@@ -163,6 +165,18 @@ class PostsController extends AbstractController
         }
 
         return $formattedComments;
+    }
+
+    private function countComments(Collection $comments) {
+        $count = 0;
+
+        /** @var Comments $comment */
+        foreach ($comments as $comment) {
+            $count++;
+            $count += $this->countComments($comment->getComments());
+        }
+
+        return $count;
     }
 
     private function truncate($text, $length, $suffix = '&hellip;', $isHTML = true) {
