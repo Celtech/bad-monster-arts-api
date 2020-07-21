@@ -151,6 +151,7 @@ class PostsController extends AbstractController
         /** @var Comments $comment */
         foreach ($comments as $comment) {
             $formattedComments[] = [
+                'id' => $comment->getId(),
                 'body' => $comment->getCommentBody(),
                 'comments' => $this->commentsToJson($comment->getComments())
             ];
