@@ -155,7 +155,10 @@ class PostsController extends AbstractController
                 'body' => $comment->getCommentBody(),
                 'comments' => $this->commentsToJson($comment->getComments()),
                 'created_at' => $comment->getCreatedAt(),
-                'author' => $comment->getAuthor() ? sprintf('%s %s', $comment->getAuthor()->getFirstName(), $comment->getAuthor()->getLastName()) : null,
+                'author' => $comment->getAuthor() ? [
+                    'id' => $comment->getAuthor()->getId(),
+                    'name' => sprintf('%s %s', $comment->getAuthor()->getFirstName(), $comment->getAuthor()->getLastName()),
+                ] : null
             ];
         }
 
