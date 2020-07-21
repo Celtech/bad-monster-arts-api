@@ -3,9 +3,12 @@
 namespace App\Controller;
 
 use App\Entity\Categories;
+use App\Entity\Comments;
 use App\Entity\Posts;
 use App\Repository\PostsRepository;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -111,6 +114,9 @@ class PostsController extends AbstractController
 
     /**
      * @Route("/api/posts/{id}", name="posts_delete", methods={"DELETE"})
+     * @param PostsRepository $postsRepository
+     * @param int $id
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function deletePost(PostsRepository $postsRepository, int $id)
     {
@@ -126,16 +132,31 @@ class PostsController extends AbstractController
     private function toJson(Posts $post, $long = true) {
         $allowedTags = '<br><h3><h4><h5><h6><p><b><i><strong><a><em>';
         $short = $this->truncate(strip_tags($post->getBody(), $allowedTags), 750);
+        $comments = $post->getComments();
 
         return [
             'id' => $post->getId(),
             'title' => $post->getTitle(),
             'title_image' => $post->getTitleImage() ? $post->getTitleImage() : '',
             'body' => $long ? $post->getBody() : $short,
+            'comments' => $this->commentsToJson($post->getComments()),
             'author' => sprintf('%s %s', $post->getAuthor()->getFirstName(), $post->getAuthor()->getLastName()),
             'categories' => $this->categoriesToString($post->getCategories()),
             'created_at' => date_format($post->getCreatedAt(), 'F d, Y'),
         ];
+    }
+
+    private function commentsToJson(Collection $comments) {
+        $formattedComments = [];
+        /** @var Comments $comment */
+        foreach ($comments as $comment) {
+            $formattedComments[] = [
+                'body' => $comment->getCommentBody(),
+                'comments' => $this->commentsToJson($comment->getComments())
+            ];
+        }
+
+        return $formattedComments;
     }
 
     private function truncate($text, $length, $suffix = '&hellip;', $isHTML = true) {
